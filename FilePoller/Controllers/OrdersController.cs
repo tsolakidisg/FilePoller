@@ -13,34 +13,32 @@ namespace FilePoller.Controllers
         public IActionResult Put([FromBody] Order orderObj)
         {
             var fileHelper = new FileHelper();
+            // Full file path for the poller
             string path = @"C:\Users\User\Folder\Test.csv";
 
+            // Create a list with the records that were read from the csv file
             var resultData = fileHelper.ReadCSVFile(path);
 
+            // Loop through the read records
             for (int i = 0; i < resultData.Count; i++)
             {
+                // If there is a match between the order data from the file and the one from the PUT request
                 if (orderObj.OrderNumber == resultData[i].OrderNumber)
                 {
+                    // Change the values based on the object received from the PUT request
                     resultData[i].CustomerName = orderObj.CustomerName;
                     resultData[i].Fees = orderObj.Fees;
-                    switch (resultData[i].OrderStatus)
+                    resultData[i].OrderStatus = resultData[i].OrderStatus switch
                     {
-                        case "Submitted":
-                            resultData[i].OrderStatus = "Provision started";
-                            break;
-                        case "Provision started":
-                            resultData[i].OrderStatus = "Provision pending";
-                            break;
-                        case "Provision pending":
-                            resultData[i].OrderStatus = "Completed";
-                            break;
-                        default:
-                            resultData[i].OrderStatus = "Provision pending";
-                            break;
-                    }
+                        "Submitted" => "Provision started",
+                        "Provision started" => "Provision pending",
+                        "Provision pending" => "Completed",
+                        _ => "Provision pending",
+                    };
                 }
             }
 
+            // Write the edited data in a new file
             fileHelper.WriteCSVFile(@"C:\Users\User\FolderTest\Test.csv", resultData);
 
             return Ok("Record updated successfully");
